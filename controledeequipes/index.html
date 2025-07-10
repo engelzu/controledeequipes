@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Equipe</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --background: 220 13% 95%;
+            --foreground: 215 28% 17%;
+            --card: 220 13% 100%;
+            --card-foreground: 215 28% 17%;
+            --popover: 220 13% 100%;
+            --popover-foreground: 215 28% 17%;
+            --primary: 221 83% 53%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.8rem;
+        }
+
+        * {
+            border-color: hsl(var(--border));
+        }
+
+        body {
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            background-image: linear-gradient(to bottom right, #e0f2fe, #dbeafe, #c7d2fe);
+            font-family: 'Inter', sans-serif;
+            font-feature-settings: "cv11", "ss01";
+            font-variation-settings: "opsz" 32;
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.8rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border: 1px solid hsl(var(--primary));
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: hsl(var(--primary) / 0.9);
+        }
+
+        .btn-secondary {
+            background: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border: 1px solid hsl(var(--border));
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: hsl(var(--secondary) / 0.8);
+        }
+
+        .btn-destructive {
+            background: hsl(var(--destructive));
+            color: hsl(var(--destructive-foreground));
+            border: 1px solid hsl(var(--destructive));
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-destructive:hover {
+            background: hsl(var(--destructive) / 0.9);
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: hsl(var(--primary));
+            box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+        }
+
+        .form-select {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: hsl(var(--primary));
+            box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+        }
+
+        .form-textarea {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            font-size: 0.875rem;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.2s;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: hsl(var(--primary));
+            box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+        }
+
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            margin-top: 0.5rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            border-color: hsl(var(--primary));
+        }
+
+        .tab-button:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.em-andamento {
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+        }
+
+        .status-badge.finalizada {
+            background: hsl(120 50% 50% / 0.1);
+            color: hsl(120 50% 30%);
+        }
+
+        .leaflet-container {
+            height: 400px;
+            border-radius: 0.5rem;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 0.8rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+
+        .file-input-label:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border: 1px solid rgba(214, 219, 220, 0.5);
+            z-index: 1001;
+            max-width: 400px;
+            transform: translateX(500px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid hsl(120 50% 50%);
+        }
+
+        .toast.error {
+            border-left: 4px solid hsl(var(--destructive));
+        }
+
+        .loading-spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid hsl(var(--primary));
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connection-status.online {
+            background: hsl(120 50% 50% / 0.1);
+            color: hsl(120 50% 30%);
+            border: 1px solid hsl(120 50% 50% / 0.3);
+        }
+
+        .connection-status.offline {
+            background: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border: 1px solid hsl(var(--destructive) / 0.3);
+        }
+
+        .connection-status.syncing {
+            background: hsl(var(--primary) / 0.1);
+            color: hsl(var(--primary));
+            border: 1px solid hsl(var(--primary) / 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
+            <div class="glassmorphism p-8 w-full max-w-md">
+                <div class="text-center mb-6">
+                    <i class="fas fa-users text-4xl text-blue-600 mb-4"></i>
+                    <h1 class="text-3xl font-bold text-gray-800">Controle de Equipe</h1>
+                    <p class="text-gray-600">Faça login para acessar o sistema</p>
+                </div>
+                
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-user mr-2"></i>Usuário
+                        </label>
+                        <input type="text" id="loginUsername" class="form-input" placeholder="Digite seu usuário" required>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-lock mr-2"></i>Senha
+                        </label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Digite sua senha" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary w-full flex items-center justify-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Entrar
+                    </button>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <button id="adminLoginBtn" class="text-blue-600 hover:underline text-sm">
+                        <i class="fas fa-cog mr-1"></i>Acesso Administrador
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App -->
+        <div id="mainApp" class="hidden">
+            <!-- Header -->
+            <header class="bg-white/80 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-50">
+                <div class="container mx-auto px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                            <h1 class="text-xl font-bold text-gray-800">Controle de Equipe</h1>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="userInfo" class="text-sm text-gray-600"></span>
+                            <button id="logoutBtn" class="btn-secondary text-sm">
+                                <i class="fas fa-sign-out-alt mr-1"></i>Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard -->
+            <div id="dashboard" class="container mx-auto px-4 py-8">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Dashboard</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="glassmorphism p-4 text-center">
+                            <i class="fas fa-clipboard-list text-2xl text-blue-600 mb-2"></i>
+                            <h3 class="font-semibold text-gray-700">Total de Atividades</h3>
+                            <p id="totalActivities" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="glassmorphism p-4 text-center">
+                            <i class="fas fa-play-circle text-2xl text-green-600 mb-2"></i>
+                            <h3 class="font-semibold text-gray-700">Em Andamento</h3>
+                            <p id="activeActivities" class="text-2xl font-bold text-green-600">0</p>
+                        </div>
+                        <div class="glassmorphism p-4 text-center">
+                            <i class="fas fa-check-circle text-2xl text-gray-600 mb-2"></i>
+                            <h3 class="font-semibold text-gray-700">Finalizadas</h3>
+                            <p id="finishedActivities" class="text-2xl font-bold text-gray-600">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button id="newActivityBtn" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Nova Atividade
+                    </button>
+                    <button id="adminPanelBtn" class="btn-secondary">
+                        <i class="fas fa-cog mr-2"></i>Painel Admin
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="glassmorphism p-4 mb-6">
+                    <h3 class="font-semibold text-gray-700 mb-3">Filtros</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <select id="filterCompany" class="form-select">
+                            <option value="">Todas as Empresas</option>
+                        </select>
+                        <select id="filterFactory" class="form-select">
+                            <option value="">Todas as Fábricas</option>
+                        </select>
+                        <select id="filterArea" class="form-select">
+                            <option value="">Todas as Áreas</option>
+                        </select>
+                        <select id="filterStatus" class="form-select">
+                            <option value="">Todos os Status</option>
+                            <option value="em-andamento">Em Andamento</option>
+                            <option value="finalizada">Finalizada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Activities List -->
+                <div id="activitiesList" class="space-y-4">
+                    <!-- Activities will be populated here -->
+                </div>
+            </div>
+
+            <!-- Register Activity Form -->
+            <div id="registerForm" class="hidden container mx-auto px-4 py-8">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Nova Atividade</h2>
+                        <button id="backToDashboard" class="btn-secondary">
+                            <i class="fas fa-arrow-left mr-2"></i>Voltar
+                        </button>
+                    </div>
+
+                    <div class="glassmorphism p-6">
+                        <form id="activityForm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Empresa *</label>
+                                    <select id="activityCompany" class="form-select" required>
+                                        <option value="">Selecione uma empresa</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Fábrica *</label>
+                                    <select id="activityFactory" class="form-select" required>
+                                        <option value="">Selecione uma fábrica</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Área *</label>
+                                    <select id="activityArea" class="form-select" required>
+                                        <option value="">Selecione uma área</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Participantes *</label>
+                                    <select id="activityParticipants" class="form-select" required>
+                                        <option value="">Selecione os participantes</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Descrição da Atividade *</label>
+                                <textarea id="activityDescription" class="form-textarea" placeholder="Descreva a atividade..." required></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                                <textarea id="activityObservation" class="form-textarea" placeholder="Observações adicionais..."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Foto da Atividade</label>
+                                    <div class="file-input-container">
+                                        <label for="activityPhoto" class="file-input-label">
+                                            <i class="fas fa-camera mr-2"></i>Escolher arquivo
+                                        </label>
+                                        <input type="file" id="activityPhoto" class="file-input" accept="image/*" capture="environment">
+                                    </div>
+                                    <img id="activityPhotoPreview" class="photo-preview hidden" alt="Preview da foto da atividade">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Foto da Autorização</label>
+                                    <div class="file-input-container">
+                                        <label for="authorizationPhoto" class="file-input-label">
+                                            <i class="fas fa-camera mr-2"></i>Escolher arquivo
+                                        </label>
+                                        <input type="file" id="authorizationPhoto" class="file-input" accept="image/*" capture="environment">
+                                    </div>
+                                    <img id="authorizationPhotoPreview" class="photo-preview hidden" alt="Preview da foto da autorização">
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Localização</label>
+                                <button type="button" id="getLocationBtn" class="btn-secondary">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>Capturar Localização
+                                </button>
+                                <div id="locationInfo" class="mt-2 text-sm text-gray-600 hidden">
+                                    <i class="fas fa-check-circle text-green-600 mr-1"></i>
+                                    Localização capturada
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary w-full">
+                                <i class="fas fa-save mr-2"></i>Registrar Atividade
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Activity Form -->
+            <div id="editForm" class="hidden container mx-auto px-4 py-8">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Editar Atividade</h2>
+                        <button id="backToDashboardFromEdit" class="btn-secondary">
+                            <i class="fas fa-arrow-left mr-2"></i>Voltar
+                        </button>
+                    </div>
+
+                    <div class="glassmorphism p-6">
+                        <!-- Tab Navigation -->
+                        <div class="flex space-x-2 mb-6">
+                            <button id="editDetailsTab" class="tab-button active">
+                                <i class="fas fa-info-circle mr-2"></i>Detalhes
+                            </button>
+                            <button id="editTimeTab" class="tab-button">
+                                <i class="fas fa-clock mr-2"></i>Controle de Tempo
+                            </button>
+                            <button id="editPhotosTab" class="tab-button">
+                                <i class="fas fa-camera mr-2"></i>Fotos
+                            </button>
+                        </div>
+
+                        <!-- Details Tab -->
+                        <div id="editDetailsContent" class="tab-content">
+                            <form id="editActivityForm">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Empresa *</label>
+                                        <select id="editActivityCompany" class="form-select" required>
+                                            <option value="">Selecione uma empresa</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Fábrica *</label>
+                                        <select id="editActivityFactory" class="form-select" required>
+                                            <option value="">Selecione uma fábrica</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Área *</label>
+                                        <select id="editActivityArea" class="form-select" required>
+                                            <option value="">Selecione uma área</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Participantes *</label>
+                                        <select id="editActivityParticipants" class="form-select" required>
+                                            <option value="">Selecione os participantes</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição da Atividade *</label>
+                                    <textarea id="editActivityDescription" class="form-textarea" required></textarea>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                                    <textarea id="editActivityObservation" class="form-textarea"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-save mr-2"></i>Salvar Alterações
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Time Control Tab -->
+                        <div id="editTimeContent" class="tab-content hidden">
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <button id="liberacaoPtBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-clipboard-check mr-2"></i>Liberação PT
+                                    </button>
+                                    <button id="liberacaoPtPrevencionistaBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-shield-alt mr-2"></i>Liberação PT Prevencionista
+                                    </button>
+                                    <button id="liberacaoTsBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-hard-hat mr-2"></i>Liberação TS
+                                    </button>
+                                    <button id="liberacaoSupervisorBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-user-tie mr-2"></i>Liberação Supervisor
+                                    </button>
+                                    <button id="inicioAtividadeBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-play mr-2"></i>Início da Atividade
+                                    </button>
+                                    <button id="checkoutBtn" class="btn-secondary text-left">
+                                        <i class="fas fa-check-circle mr-2"></i>Checkout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Photos Tab -->
+                        <div id="editPhotosContent" class="tab-content hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Foto da Atividade</label>
+                                    <div class="file-input-container">
+                                        <label for="editActivityPhoto" class="file-input-label">
+                                            <i class="fas fa-camera mr-2"></i>Escolher arquivo
+                                        </label>
+                                        <input type="file" id="editActivityPhoto" class="file-input" accept="image/*" capture="environment">
+                                    </div>
+                                    <img id="editActivityPhotoPreview" class="photo-preview hidden" alt="Preview da foto da atividade">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Foto da Autorização</label>
+                                    <div class="file-input-container">
+                                        <label for="editAuthorizationPhoto" class="file-input-label">
+                                            <i class="fas fa-camera mr-2"></i>Escolher arquivo
+                                        </label>
+                                        <input type="file" id="editAuthorizationPhoto" class="file-input" accept="image/*" capture="environment">
+                                    </div>
+                                    <img id="editAuthorizationPhotoPreview" class="photo-preview hidden" alt="Preview da foto da autorização">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPanel" class="hidden container mx-auto px-4 py-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Painel Administrativo</h2>
+                    <button id="backToDashboardFromAdmin" class="btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+                    </button>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="glassmorphism p-6">
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button id="adminReportTab" class="tab-button active">
+                            <i class="fas fa-chart-bar mr-2"></i>Relatórios
+                        </button>
+                        <button id="adminCompaniesTab" class="tab-button">
+                            <i class="fas fa-building mr-2"></i>Empresas
+                        </button>
+                        <button id="adminFactoriesTab" class="tab-button">
+                            <i class="fas fa-industry mr-2"></i>Fábricas
+                        </button>
+                        <button id="adminAreasTab" class="tab-button">
+                            <i class="fas fa-map mr-2"></i>Áreas
+                        </button>
+                        <button id="adminTeamTab" class="tab-button">
+                            <i class="fas fa-users mr-2"></i>Equipe
+                        </button>
+                        <button id="adminUsersTab" class="tab-button">
+                            <i class="fas fa-user-cog mr-2"></i>Usuários
+                        </button>
+                    </div>
+
+                    <!-- Export Button -->
+                    <div class="mb-6">
+                        <button id="exportExcelBtn" class="btn-primary">
+                            <i class="fas fa-file-excel mr-2"></i>Exportar para Excel
+                        </button>
+                    </div>
+
+                    <!-- Admin Content -->
+                    <div id="adminContent">
+                        <!-- Reports Tab -->
+                        <div id="adminReportContent" class="admin-tab-content">
+                            <h3 class="text-lg font-semibold mb-4">Relatório de Atividades</h3>
+                            <div id="activitiesReport" class="space-y-4">
+                                <!-- Reports will be populated here -->
+                            </div>
+                        </div>
+
+                        <!-- Management Tabs -->
+                        <div id="adminCompaniesContent" class="admin-tab-content hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Gerenciar Empresas</h3>
+                                <button id="addCompanyBtn" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar
+                                </button>
+                            </div>
+                            <div id="companiesList" class="space-y-2">
+                                <!-- Companies will be populated here -->
+                            </div>
+                        </div>
+
+                        <div id="adminFactoriesContent" class="admin-tab-content hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Gerenciar Fábricas</h3>
+                                <button id="addFactoryBtn" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar
+                                </button>
+                            </div>
+                            <div id="factoriesList" class="space-y-2">
+                                <!-- Factories will be populated here -->
+                            </div>
+                        </div>
+
+                        <div id="adminAreasContent" class="admin-tab-content hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Gerenciar Áreas</h3>
+                                <button id="addAreaBtn" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar
+                                </button>
+                            </div>
+                            <div id="areasList" class="space-y-2">
+                                <!-- Areas will be populated here -->
+                            </div>
+                        </div>
+
+                        <div id="adminTeamContent" class="admin-tab-content hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Gerenciar Equipe</h3>
+                                <button id="addTeamBtn" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar
+                                </button>
+                            </div>
+                            <div id="teamList" class="space-y-2">
+                                <!-- Team members will be populated here -->
+                            </div>
+                        </div>
+
+                        <div id="adminUsersContent" class="admin-tab-content hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold">Gerenciar Usuários</h3>
+                                <button id="addUserBtn" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar
+                                </button>
+                            </div>
+                            <div id="usersList" class="space-y-2">
+                                <!-- Users will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status online">
+        <i class="fas fa-wifi mr-1"></i>Online
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentActivity = null;
+        let currentLocation = null;
+        let isOnline = navigator.onLine;
+        let activities = [];
+        let companies = [];
+        let factories = [];
+        let areas = [];
+        let team = [];
+        let users = [];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            loadInitialData();
+            setupEventListeners();
+            updateConnectionStatus();
+            checkAuthStatus();
+        }
+
+        function loadInitialData() {
+            // Load sample data if not exists
+            if (!localStorage.getItem('companies')) {
+                const sampleCompanies = [
+                    { id: '1', name: 'Petrobras' },
+                    { id: '2', name: 'Vale' },
+                    { id: '3', name: 'Embraer' }
+                ];
+                localStorage.setItem('companies', JSON.stringify(sampleCompanies));
+            }
+
+            if (!localStorage.getItem('factories')) {
+                const sampleFactories = [
+                    { id: '1', name: 'Refinaria Paulínia' },
+                    { id: '2', name: 'Mina Carajás' },
+                    { id: '3', name: 'Fábrica Gavião Peixoto' }
+                ];
+                localStorage.setItem('factories', JSON.stringify(sampleFactories));
+            }
+
+            if (!localStorage.getItem('areas')) {
+                const sampleAreas = [
+                    { id: '1', name: 'Produção' },
+                    { id: '2', name: 'Manutenção' },
+                    { id: '3', name: 'Segurança' },
+                    { id: '4', name: 'Qualidade' }
+                ];
+                localStorage.setItem('areas', JSON.stringify(sampleAreas));
+            }
+
+            if (!localStorage.getItem('team')) {
+                const sampleTeam = [
+                    { id: '1', name: 'João Silva' },
+                    { id: '2', name: 'Maria Santos' },
+                    { id: '3', name: 'Carlos Oliveira' },
+                    { id: '4', name: 'Ana Costa' }
+                ];
+                localStorage.setItem('team', JSON.stringify(sampleTeam));
+            }
+
+            if (!localStorage.getItem('users')) {
+                const sampleUsers = [
+                    { id: '1', username: 'admin', password: '123456' },
+                    { id: '2', username: 'user1', password: '123456' },
+                    { id: '3', username: 'user2', password: '123456' }
+                ];
+                localStorage.setItem('users', JSON.stringify(sampleUsers));
+            }
+
+            // Load data from localStorage
+            companies = JSON.parse(localStorage.getItem('companies')) || [];
+            factories = JSON.parse(localStorage.getItem('factories')) || [];
+            areas = JSON.parse(localStorage.getItem('areas')) || [];
+            team = JSON.parse(localStorage.getItem('team')) || [];
+            users = JSON.parse(localStorage.getItem('users')) || [];
+            activities = JSON.parse(localStorage.getItem('activities')) || [];
+        }
+
+        function setupEventListeners() {
+            // Login
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('adminLoginBtn').addEventListener('click', handleAdminLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            // Navigation
+            document.getElementById('newActivityBtn').addEventListener('click', showRegisterForm);
+            document.getElementById('adminPanelBtn').addEventListener('click', showAdminPanel);
+            document.getElementById('backToDashboard').addEventListener('click', showDashboard);
+            document.getElementById('backToDashboardFromEdit').addEventListener('click', showDashboard);
+            document.getElementById('backToDashboardFromAdmin').addEventListener('click', showDashboard);
+
+            // Forms
+            document.getElementById('activityForm').addEventListener('submit', handleActivitySubmit);
+            document.getElementById('editActivityForm').addEventListener('submit', handleEditActivitySubmit);
+            document.getElementById('getLocationBtn').addEventListener('click', captureLocation);
+
+            // Photo inputs with preview
+            document.getElementById('activityPhoto').addEventListener('change', function(e) {
+                handlePhotoPreview(e, 'activityPhotoPreview');
+            });
+            document.getElementById('authorizationPhoto').addEventListener('change', function(e) {
+                handlePhotoPreview(e, 'authorizationPhotoPreview');
+            });
+            document.getElementById('editActivityPhoto').addEventListener('change', function(e) {
+                handlePhotoPreview(e, 'editActivityPhotoPreview');
+            });
+            document.getElementById('editAuthorizationPhoto').addEventListener('change', function(e) {
+                handlePhotoPreview(e, 'editAuthorizationPhotoPreview');
+            });
+
+            // Tabs
+            setupTabNavigation();
+
+            // Filters
+            setupFilters();
+
+            // Admin
+            setupAdminEventListeners();
+
+            // Connection status
+            window.addEventListener('online', updateConnectionStatus);
+            window.addEventListener('offline', updateConnectionStatus);
+        }
+
+        function handlePhotoPreview(event, previewId) {
+            const file = event.target.files[0];
+            const preview = document.getElementById(previewId);
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+
+        function setupTabNavigation() {
+            // Edit form tabs
+            document.getElementById('editDetailsTab').addEventListener('click', () => switchEditTab('details'));
+            document.getElementById('editTimeTab').addEventListener('click', () => switchEditTab('time'));
+            document.getElementById('editPhotosTab').addEventListener('click', () => switchEditTab('photos'));
+
+            // Admin tabs
+            document.getElementById('adminReportTab').addEventListener('click', () => switchAdminTab('report'));
+            document.getElementById('adminCompaniesTab').addEventListener('click', () => switchAdminTab('companies'));
+            document.getElementById('adminFactoriesTab').addEventListener('click', () => switchAdminTab('factories'));
+            document.getElementById('adminAreasTab').addEventListener('click', () => switchAdminTab('areas'));
+            document.getElementById('adminTeamTab').addEventListener('click', () => switchAdminTab('team'));
+            document.getElementById('adminUsersTab').addEventListener('click', () => switchAdminTab('users'));
+
+            // Time control buttons
+            document.getElementById('liberacaoPtBtn').addEventListener('click', () => updateTimeControl('liberacaoPt'));
+            document.getElementById('liberacaoPtPrevencionistaBtn').addEventListener('click', () => updateTimeControl('liberacaoPtPrevencionista'));
+            document.getElementById('liberacaoTsBtn').addEventListener('click', () => updateTimeControl('liberacaoTs'));
+            document.getElementById('liberacaoSupervisorBtn').addEventListener('click', () => updateTimeControl('liberacaoSupervisor'));
+            document.getElementById('inicioAtividadeBtn').addEventListener('click', () => updateTimeControl('inicioAtividade'));
+            document.getElementById('checkoutBtn').addEventListener('click', () => updateTimeControl('checkout'));
+        }
+
+        function switchEditTab(tab) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            // Add active class to selected tab
+            document.getElementById(`edit${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`).classList.add('active');
+            document.getElementById(`edit${tab.charAt(0).toUpperCase() + tab.slice(1)}Content`).classList.remove('hidden');
+        }
+
+        function switchAdminTab(tab) {
+            // Remove active class from all admin tabs
+            document.querySelectorAll('#adminPanel .tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.add('hidden'));
+
+            // Add active class to selected tab
+            document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`).classList.add('active');
+            document.getElementById(`admin${tab.charAt(0).toUpperCase() + tab.slice(1)}Content`).classList.remove('hidden');
+
+            // Load specific admin content
+            loadAdminContent(tab);
+        }
+
+        function updateTimeControl(type) {
+            if (!currentActivity) return;
+
+            const now = new Date();
+            const timeString = now.toLocaleString('pt-BR');
+            const button = document.getElementById(`${type}Btn`);
+            
+            // Update button text to show the time
+            const buttonText = button.querySelector('i').nextSibling.textContent.trim();
+            button.innerHTML = `<i class="${button.querySelector('i').className}"></i>${buttonText}: ${timeString}`;
+            
+            // Update activity object
+            currentActivity[`${type}Time`] = timeString;
+            
+            // Save to localStorage
+            const activityIndex = activities.findIndex(a => a.id === currentActivity.id);
+            if (activityIndex !== -1) {
+                activities[activityIndex] = currentActivity;
+                localStorage.setItem('activities', JSON.stringify(activities));
+            }
+            
+            showToast('Horário registrado com sucesso!', 'success');
+        }
+
+        function setupFilters() {
+            document.getElementById('filterCompany').addEventListener('change', filterActivities);
+            document.getElementById('filterFactory').addEventListener('change', filterActivities);
+            document.getElementById('filterArea').addEventListener('change', filterActivities);
+            document.getElementById('filterStatus').addEventListener('change', filterActivities);
+        }
+
+        function setupAdminEventListeners() {
+            document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
+            
+            // Add buttons
+            document.getElementById('addCompanyBtn').addEventListener('click', () => showAddItemModal('company'));
+            document.getElementById('addFactoryBtn').addEventListener('click', () => showAddItemModal('factory'));
+            document.getElementById('addAreaBtn').addEventListener('click', () => showAddItemModal('area'));
+            document.getElementById('addTeamBtn').addEventListener('click', () => showAddItemModal('team'));
+            document.getElementById('addUserBtn').addEventListener('click', () => showAddItemModal('user'));
+        }
+
+        function checkAuthStatus() {
+            const isAuthenticated = sessionStorage.getItem('isAuthenticated');
+            if (isAuthenticated === 'true') {
+                currentUser = {
+                    username: sessionStorage.getItem('username') || 'admin',
+                    isAdmin: sessionStorage.getItem('isAdminAuthenticated') === 'true'
+                };
+                showMainApp();
+            } else {
+                showLoginScreen();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // Check for admin login
+            if (username === 'admin' && password === '789512') {
+                loginUser(username, true);
+                return;
+            }
+
+            // Check regular users
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                loginUser(username, false);
+            } else {
+                showToast('Usuário ou senha inválidos', 'error');
+            }
+        }
+
+        function handleAdminLogin() {
+            const password = prompt('Digite a senha de administrador:');
+            if (password === '789512') {
+                loginUser('admin', true);
+            } else {
+                showToast('Senha de administrador inválida', 'error');
+            }
+        }
+
+        function loginUser(username, isAdmin) {
+            currentUser = { username, isAdmin };
+            sessionStorage.setItem('isAuthenticated', 'true');
+            sessionStorage.setItem('username', username);
+            sessionStorage.setItem('isAdminAuthenticated', String(isAdmin));
+            showMainApp();
+            showToast('Login realizado com sucesso!', 'success');
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('isAuthenticated');
+            sessionStorage.removeItem('username');
+            sessionStorage.removeItem('isAdminAuthenticated');
+            currentUser = null;
+            showLoginScreen();
+            showToast('Logout realizado com sucesso!', 'success');
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('userInfo').textContent = `Logado como: ${currentUser.username}`;
+            showDashboard();
+        }
+
+        function showDashboard() {
+            // Hide all other sections
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('editForm').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            loadDashboard();
+        }
+
+        function loadDashboard() {
+            updateActivityCounts();
+            populateFilterOptions();
+            renderActivities();
+        }
+
+        function updateActivityCounts() {
+            const activeActivities = activities.filter(a => !a.checkoutTime).length;
+            const finishedActivities = activities.filter(a => a.checkoutTime).length;
+            
+            document.getElementById('totalActivities').textContent = activities.length;
+            document.getElementById('activeActivities').textContent = activeActivities;
+            document.getElementById('finishedActivities').textContent = finishedActivities;
+        }
+
+        function populateFilterOptions() {
+            const filterCompany = document.getElementById('filterCompany');
+            const filterFactory = document.getElementById('filterFactory');
+            const filterArea = document.getElementById('filterArea');
+
+            // Clear existing options
+            filterCompany.innerHTML = '<option value="">Todas as Empresas</option>';
+            filterFactory.innerHTML = '<option value="">Todas as Fábricas</option>';
+            filterArea.innerHTML = '<option value="">Todas as Áreas</option>';
+
+            // Populate options
+            companies.forEach(company => {
+                filterCompany.innerHTML += `<option value="${company.name}">${company.name}</option>`;
+            });
+
+            factories.forEach(factory => {
+                filterFactory.innerHTML += `<option value="${factory.name}">${factory.name}</option>`;
+            });
+
+            areas.forEach(area => {
+                filterArea.innerHTML += `<option value="${area.name}">${area.name}</option>`;
+            });
+        }
+
+        function renderActivities() {
+            const container = document.getElementById('activitiesList');
+            let filteredActivities = activities;
+
+            // Apply filters
+            const companyFilter = document.getElementById('filterCompany').value;
+            const factoryFilter = document.getElementById('filterFactory').value;
+            const areaFilter = document.getElementById('filterArea').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            if (companyFilter) {
+                filteredActivities = filteredActivities.filter(a => a.company === companyFilter);
+            }
+            if (factoryFilter) {
+                filteredActivities = filteredActivities.filter(a => a.factory === factoryFilter);
+            }
+            if (areaFilter) {
+                filteredActivities = filteredActivities.filter(a => a.area === areaFilter);
+            }
+            if (statusFilter) {
+                if (statusFilter === 'em-andamento') {
+                    filteredActivities = filteredActivities.filter(a => !a.checkoutTime);
+                } else if (statusFilter === 'finalizada') {
+                    filteredActivities = filteredActivities.filter(a => a.checkoutTime);
+                }
+            }
+
+            // Filter by user permission
+            if (!currentUser.isAdmin) {
+                filteredActivities = filteredActivities.filter(a => a.registeredBy === currentUser.username);
+            }
+
+            container.innerHTML = '';
+
+            if (filteredActivities.length === 0) {
+                container.innerHTML = '<div class="glassmorphism p-6 text-center text-gray-500">Nenhuma atividade encontrada</div>';
+                return;
+            }
+
+            filteredActivities.forEach(activity => {
+                const status = activity.checkoutTime ? 'finalizada' : 'em-andamento';
+                const statusText = activity.checkoutTime ? 'Finalizada' : 'Em Andamento';
+                const checkinTime = new Date(activity.checkinTime).toLocaleString('pt-BR');
+                const checkoutTime = activity.checkoutTime ? new Date(activity.checkoutTime).toLocaleString('pt-BR') : '-';
+
+                container.innerHTML += `
+                    <div class="glassmorphism p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${activity.company} - ${activity.factory}</h3>
+                                <p class="text-gray-600">${activity.area} • ${activity.participants}</p>
+                            </div>
+                            <span class="status-badge ${status}">${statusText}</span>
+                        </div>
+                        
+                        <p class="text-gray-700 mb-4">${activity.description}</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                            <div><strong>Check-in:</strong> ${checkinTime}</div>
+                            <div><strong>Check-out:</strong> ${checkoutTime}</div>
+                            <div><strong>Registrado por:</strong> ${activity.registeredBy}</div>
+                            ${activity.observation ? `<div><strong>Observação:</strong> ${activity.observation}</div>` : ''}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="editActivity('${activity.id}')" class="btn-secondary text-sm">
+                                <i class="fas fa-edit mr-1"></i>Editar
+                            </button>
+                            <button onclick="deleteActivity('${activity.id}')" class="btn-destructive text-sm">
+                                <i class="fas fa-trash mr-1"></i>Excluir
+                            </button>
+                            ${!activity.checkoutTime ? `<button onclick="checkoutActivity('${activity.id}')" class="btn-primary text-sm">
+                                <i class="fas fa-check-circle mr-1"></i>Checkout
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterActivities() {
+            renderActivities();
+        }
+
+        function showRegisterForm() {
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            populateFormOptions();
+        }
+
+        function populateFormOptions() {
+            const elements = [
+                { id: 'activityCompany', data: companies },
+                { id: 'activityFactory', data: factories },
+                { id: 'activityArea', data: areas },
+                { id: 'activityParticipants', data: team },
+                { id: 'editActivityCompany', data: companies },
+                { id: 'editActivityFactory', data: factories },
+                { id: 'editActivityArea', data: areas },
+                { id: 'editActivityParticipants', data: team }
+            ];
+
+            elements.forEach(element => {
+                const select = document.getElementById(element.id);
+                if (select) {
+                    const currentValue = select.value;
+                    const firstOption = select.options[0];
+                    select.innerHTML = '';
+                    select.appendChild(firstOption);
+                    
+                    element.data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name;
+                        option.textContent = item.name;
+                        select.appendChild(option);
+                    });
+                    
+                    select.value = currentValue;
+                }
+            });
+        }
+
+        function handleActivitySubmit(e) {
+            e.preventDefault();
+            
+            const activity = {
+                id: Date.now().toString(),
+                company: document.getElementById('activityCompany').value,
+                factory: document.getElementById('activityFactory').value,
+                area: document.getElementById('activityArea').value,
+                participants: document.getElementById('activityParticipants').value,
+                description: document.getElementById('activityDescription').value,
+                observation: document.getElementById('activityObservation').value,
+                checkinTime: new Date().toISOString(),
+                registeredBy: currentUser.username,
+                location: currentLocation
+            };
+
+            // Handle photos
+            const activityPhoto = document.getElementById('activityPhoto').files[0];
+            const authorizationPhoto = document.getElementById('authorizationPhoto').files[0];
+            
+            if (activityPhoto) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    activity.activityPhotoDataUrl = e.target.result;
+                    saveActivity(activity);
+                };
+                reader.readAsDataURL(activityPhoto);
+            } else if (authorizationPhoto) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    activity.authorizationPhotoDataUrl = e.target.result;
+                    saveActivity(activity);
+                };
+                reader.readAsDataURL(authorizationPhoto);
+            } else {
+                saveActivity(activity);
+            }
+        }
+
+        function saveActivity(activity) {
+            activities.push(activity);
+            localStorage.setItem('activities', JSON.stringify(activities));
+            
+            showToast('Atividade registrada com sucesso!', 'success');
+            document.getElementById('activityForm').reset();
+            document.getElementById('activityPhotoPreview').classList.add('hidden');
+            document.getElementById('authorizationPhotoPreview').classList.add('hidden');
+            document.getElementById('locationInfo').classList.add('hidden');
+            currentLocation = null;
+            
+            showDashboard();
+        }
+
+        function editActivity(id) {
+            const activity = activities.find(a => a.id === id);
+            if (!activity) return;
+
+            currentActivity = activity;
+            
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('editForm').classList.remove('hidden');
+            
+            populateFormOptions();
+            
+            // Populate form fields
+            document.getElementById('editActivityCompany').value = activity.company;
+            document.getElementById('editActivityFactory').value = activity.factory;
+            document.getElementById('editActivityArea').value = activity.area;
+            document.getElementById('editActivityParticipants').value = activity.participants;
+            document.getElementById('editActivityDescription').value = activity.description;
+            document.getElementById('editActivityObservation').value = activity.observation || '';
+            
+            // Load photos if they exist
+            if (activity.activityPhotoDataUrl) {
+                const preview = document.getElementById('editActivityPhotoPreview');
+                preview.src = activity.activityPhotoDataUrl;
+                preview.classList.remove('hidden');
+            }
+            
+            if (activity.authorizationPhotoDataUrl) {
+                const preview = document.getElementById('editAuthorizationPhotoPreview');
+                preview.src = activity.authorizationPhotoDataUrl;
+                preview.classList.remove('hidden');
+            }
+            
+            // Update time control buttons
+            updateTimeControlButtons(activity);
+        }
+
+        function updateTimeControlButtons(activity) {
+            const buttons = [
+                { id: 'liberacaoPtBtn', field: 'liberacaoPtTime', text: 'Liberação PT' },
+                { id: 'liberacaoPtPrevencionistaBtn', field: 'liberacaoPtPrevencionistaTime', text: 'Liberação PT Prevencionista' },
+                { id: 'liberacaoTsBtn', field: 'liberacaoTsTime', text: 'Liberação TS' },
+                { id: 'liberacaoSupervisorBtn', field: 'liberacaoSupervisorTime', text: 'Liberação Supervisor' },
+                { id: 'inicioAtividadeBtn', field: 'inicioAtividadeTime', text: 'Início da Atividade' },
+                { id: 'checkoutBtn', field: 'checkoutTime', text: 'Checkout' }
+            ];
+
+            buttons.forEach(button => {
+                const element = document.getElementById(button.id);
+                const time = activity[button.field];
+                if (time) {
+                    element.innerHTML = `<i class="${element.querySelector('i').className}"></i>${button.text}: ${time}`;
+                } else {
+                    element.innerHTML = `<i class="${element.querySelector('i').className}"></i>${button.text}`;
+                }
+            });
+        }
+
+        function handleEditActivitySubmit(e) {
+            e.preventDefault();
+            
+            if (!currentActivity) return;
+            
+            currentActivity.company = document.getElementById('editActivityCompany').value;
+            currentActivity.factory = document.getElementById('editActivityFactory').value;
+            currentActivity.area = document.getElementById('editActivityArea').value;
+            currentActivity.participants = document.getElementById('editActivityParticipants').value;
+            currentActivity.description = document.getElementById('editActivityDescription').value;
+            currentActivity.observation = document.getElementById('editActivityObservation').value;
+            
+            // Handle photos
+            const activityPhoto = document.getElementById('editActivityPhoto').files[0];
+            const authorizationPhoto = document.getElementById('editAuthorizationPhoto').files[0];
+            
+            if (activityPhoto) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentActivity.activityPhotoDataUrl = e.target.result;
+                    updateActivity();
+                };
+                reader.readAsDataURL(activityPhoto);
+            } else if (authorizationPhoto) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentActivity.authorizationPhotoDataUrl = e.target.result;
+                    updateActivity();
+                };
+                reader.readAsDataURL(authorizationPhoto);
+            } else {
+                updateActivity();
+            }
+        }
+
+        function updateActivity() {
+            const index = activities.findIndex(a => a.id === currentActivity.id);
+            if (index !== -1) {
+                activities[index] = currentActivity;
+                localStorage.setItem('activities', JSON.stringify(activities));
+                showToast('Atividade atualizada com sucesso!', 'success');
+                showDashboard();
+            }
+        }
+
+        function deleteActivity(id) {
+            const password = prompt('Digite a senha para excluir (789512):');
+            if (password !== '789512') {
+                showToast('Senha incorreta', 'error');
+                return;
+            }
+
+            if (confirm('Tem certeza que deseja excluir esta atividade?')) {
+                activities = activities.filter(a => a.id !== id);
+                localStorage.setItem('activities', JSON.stringify(activities));
+                showToast('Atividade excluída com sucesso!', 'success');
+                renderActivities();
+                updateActivityCounts();
+            }
+        }
+
+        function checkoutActivity(id) {
+            const activity = activities.find(a => a.id === id);
+            if (activity) {
+                activity.checkoutTime = new Date().toISOString();
+                localStorage.setItem('activities', JSON.stringify(activities));
+                showToast('Checkout realizado com sucesso!', 'success');
+                renderActivities();
+                updateActivityCounts();
+            }
+        }
+
+        function captureLocation() {
+            if (!navigator.geolocation) {
+                showToast('Geolocalização não suportada', 'error');
+                return;
+            }
+
+            const button = document.getElementById('getLocationBtn');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Capturando...';
+            button.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    document.getElementById('locationInfo').classList.remove('hidden');
+                    button.innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i>Localização Capturada';
+                    button.disabled = false;
+                    
+                    showToast('Localização capturada com sucesso!', 'success');
+                },
+                error => {
+                    showToast('Erro ao capturar localização', 'error');
+                    button.innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i>Capturar Localização';
+                    button.disabled = false;
+                }
+            );
+        }
+
+        function showAdminPanel() {
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            switchAdminTab('report');
+        }
+
+        function loadAdminContent(tab) {
+            switch (tab) {
+                case 'report':
+                    loadActivitiesReport();
+                    break;
+                case 'companies':
+                    loadManageItems('companies', companies);
+                    break;
+                case 'factories':
+                    loadManageItems('factories', factories);
+                    break;
+                case 'areas':
+                    loadManageItems('areas', areas);
+                    break;
+                case 'team':
+                    loadManageItems('team', team);
+                    break;
+                case 'users':
+                    loadManageItems('users', users);
+                    break;
+            }
+        }
+
+        function loadActivitiesReport() {
+            const container = document.getElementById('activitiesReport');
+            container.innerHTML = '';
+
+            if (activities.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500">Nenhuma atividade registrada</div>';
+                return;
+            }
+
+            activities.forEach(activity => {
+                const checkinTime = new Date(activity.checkinTime).toLocaleString('pt-BR');
+                const checkoutTime = activity.checkoutTime ? new Date(activity.checkoutTime).toLocaleString('pt-BR') : 'Pendente';
+                const status = activity.checkoutTime ? 'Finalizada' : 'Em Andamento';
+
+                container.innerHTML += `
+                    <div class="bg-white/50 p-4 rounded-lg border border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${activity.company} - ${activity.factory}</h4>
+                                <p class="text-sm text-gray-600">${activity.area} • ${activity.participants}</p>
+                                <p class="text-sm text-gray-700 mt-2">${activity.description}</p>
+                                ${activity.observation ? `<p class="text-sm text-gray-600 mt-1"><strong>Obs:</strong> ${activity.observation}</p>` : ''}
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <div><strong>Status:</strong> ${status}</div>
+                                <div><strong>Check-in:</strong> ${checkinTime}</div>
+                                <div><strong>Check-out:</strong> ${checkoutTime}</div>
+                                <div><strong>Registrado por:</strong> ${activity.registeredBy}</div>
+                                ${activity.location ? `<div><strong>Localização:</strong> ${activity.location.lat.toFixed(6)}, ${activity.location.lng.toFixed(6)}</div>` : ''}
+                                ${activity.liberacaoPtTime ? `<div><strong>Liberação PT:</strong> ${activity.liberacaoPtTime}</div>` : ''}
+                                ${activity.liberacaoPtPrevencionistaTime ? `<div><strong>Liberação PT Prevencionista:</strong> ${activity.liberacaoPtPrevencionistaTime}</div>` : ''}
+                                ${activity.liberacaoTsTime ? `<div><strong>Liberação TS:</strong> ${activity.liberacaoTsTime}</div>` : ''}
+                                ${activity.liberacaoSupervisorTime ? `<div><strong>Liberação Supervisor:</strong> ${activity.liberacaoSupervisorTime}</div>` : ''}
+                                ${activity.inicioAtividadeTime ? `<div><strong>Início da Atividade:</strong> ${activity.inicioAtividadeTime}</div>` : ''}
+                                ${activity.activityPhotoDataUrl ? `<div><strong>Foto da Atividade:</strong> <a href="${activity.activityPhotoDataUrl}" target="_blank" class="text-blue-600 hover:underline">Ver foto</a></div>` : ''}
+                                ${activity.authorizationPhotoDataUrl ? `<div><strong>Foto da Autorização:</strong> <a href="${activity.authorizationPhotoDataUrl}" target="_blank" class="text-blue-600 hover:underline">Ver foto</a></div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function loadManageItems(type, items) {
+            const container = document.getElementById(`${type}List`);
+            container.innerHTML = '';
+
+            items.forEach(item => {
+                container.innerHTML += `
+                    <div class="bg-white/50 p-3 rounded-lg border border-gray-200 flex justify-between items-center">
+                        <span>${item.name}</span>
+                        <button onclick="deleteItem('${type}', '${item.id}')" class="btn-destructive text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function showAddItemModal(type) {
+            const name = prompt(`Digite o nome do(a) ${type}:`);
+            if (name && name.trim()) {
+                addItem(type, name.trim());
+            }
+        }
+
+        function addItem(type, name) {
+            const pluralMap = {
+                'company': 'companies',
+                'factory': 'factories',
+                'area': 'areas',
+                'team': 'team',
+                'user': 'users'
+            };
+
+            const plural = pluralMap[type];
+            const item = {
+                id: Date.now().toString(),
+                name: name
+            };
+
+            if (type === 'user') {
+                const password = prompt('Digite a senha para o usuário:');
+                if (!password) return;
+                item.username = name;
+                item.password = password;
+            }
+
+            window[plural].push(item);
+            localStorage.setItem(plural, JSON.stringify(window[plural]));
+            
+            showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} adicionado com sucesso!`, 'success');
+            loadManageItems(plural, window[plural]);
+            populateFormOptions();
+        }
+
+        function deleteItem(type, id) {
+            if (confirm('Tem certeza que deseja excluir este item?')) {
+                window[type] = window[type].filter(item => item.id !== id);
+                localStorage.setItem(type, JSON.stringify(window[type]));
+                showToast('Item excluído com sucesso!', 'success');
+                loadManageItems(type, window[type]);
+                populateFormOptions();
+            }
+        }
+
+        function exportToExcel() {
+            if (activities.length === 0) {
+                showToast('Nenhuma atividade para exportar', 'error');
+                return;
+            }
+
+            const data = activities.map(activity => ({
+                'Empresa': activity.company,
+                'Fábrica': activity.factory,
+                'Área': activity.area,
+                'Participantes': activity.participants,
+                'Descrição': activity.description,
+                'Observação': activity.observation || '',
+                'Check-in': new Date(activity.checkinTime).toLocaleString('pt-BR'),
+                'Check-out': activity.checkoutTime ? new Date(activity.checkoutTime).toLocaleString('pt-BR') : 'Pendente',
+                'Registrado por': activity.registeredBy,
+                'Localização (Lat)': activity.location ? activity.location.lat : '',
+                'Localização (Lng)': activity.location ? activity.location.lng : '',
+                'Liberação PT': activity.liberacaoPtTime || '',
+                'Liberação PT Prevencionista': activity.liberacaoPtPrevencionistaTime || '',
+                'Liberação TS': activity.liberacaoTsTime || '',
+                'Liberação Supervisor': activity.liberacaoSupervisorTime || '',
+                'Início da Atividade': activity.inicioAtividadeTime || ''
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Atividades');
+
+            const date = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `relatorio_atividades_${date}.xlsx`);
+            
+            showToast('Relatório exportado com sucesso!', 'success');
+        }
+
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            isOnline = navigator.onLine;
+
+            if (isOnline) {
+                statusElement.className = 'connection-status online';
+                statusElement.innerHTML = '<i class="fas fa-wifi mr-1"></i>Online';
+            } else {
+                statusElement.className = 'connection-status offline';
+                statusElement.innerHTML = '<i class="fas fa-wifi-slash mr-1"></i>Offline';
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

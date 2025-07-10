@@ -1,0 +1,4 @@
+{ "name": "controledeequipe", "version": "1.0.0", "description": "Sistema de Controle de Equipe com Neon DB",
+      "main": "index.html", "dependencies": { "pg": "^8.11.0" }, "devDependencies": {}, "scripts": { "build": "echo
+      'Build completed'" }, "keywords": ["controle", "equipe", "neon", "postgresql"], "author": "Seu Nome", "license":
+      "ISC" }
